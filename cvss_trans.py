@@ -1,9 +1,3 @@
-none_low_high = {
-    "N": "None", 
-    "L": "Low",
-    "H": "High"
-}
-
 cvss_titles = {
     "AV": "Attack Vector",
     "AC": "Attack Complexity",
@@ -26,7 +20,11 @@ cvss_score = {
         "L": "Low",
         "H": "High"
     },
-    "PR": none_low_high,
+    "PR": {
+        "N": "None", 
+        "L": "Low",
+        "H": "High"
+    },
     "UI": {
         "N": "None",
         "R": "Required"
@@ -35,7 +33,19 @@ cvss_score = {
         "U": "Unchanged",
         "C": "Changed"
     },
-    "C": none_low_high,
-    "I": none_low_high,
-    "A": none_low_high
+    "C": {
+        "N": "None", 
+        "L": "Low",
+        "H": "High"
+    },
+    "I": {
+        "N": "None", 
+        "L": "Low",
+        "H": "High"
+    },
+    "A": {
+        "N": "None", 
+        "L": "Low",
+        "H": "High"
+    }
 }
