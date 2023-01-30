@@ -28,17 +28,19 @@ def get_cve_info(cve_number): # TODO - Add threads to retrieve informations
     }
 
 
-published_on, vector, description, cve_score = get_cve_info("2016-5195")
-print(published_on)
-print(vector)
-print(description)
-print(cve_score)
+def convert_to_detailed_cvss(cvss):
+    cvss = cvss.split('/')[1:]
+    detailed_cvss = {}
+    for vector in cvss:
+        name, score = vector.split(':')
+        score = cvss_score[name][score]
+        name = cvss_titles[name]
+        detailed_cvss[name] = score
+    return detailed_cvss
 
-# ####### T'occupes pas #######
 
-# def get_detailed_vector(vector):
-#     vectors = vector.split('/')
-#     vectors.pop(0)
-#     for vector in vectors:
-        
-# detailed_vector = get_detailed_vector(vector)
+cve_info = get_cve_info("2016-5195")
+
+for value in cve_info.values():
+    if "CVSS" in value:
+        print(convert_to_detailed_cvss(value))
