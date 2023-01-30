@@ -20,7 +20,12 @@ def get_cve_info(cve_number): # TODO - Add threads to retrieve informations
     vector = retrieve_html_information(url, "span", "data-testid", "vuln-cvss3-nist-vector")
     description = retrieve_html_information(url, "p", "data-testid", "vuln-description")
     cve_score = retrieve_html_information(url, "a", "data-testid", "vuln-cvss3-panel-score")
-    return published_on, vector, description, cve_score, # FIXME - Put this in a dictionary
+    return {
+        "published_on": published_on, 
+        "cvss": vector, 
+        "description": description, 
+        "score": cve_score
+    }
 
 
 published_on, vector, description, cve_score = get_cve_info("2016-5195")
