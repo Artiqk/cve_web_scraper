@@ -8,10 +8,14 @@ base_url = "https://nvd.nist.gov/vuln/detail/cve-"
 requests_cache.install_cache('html_cache')
 
 def retrieve_html_information(url, beacon, attr, attr_value): # TODO - We can optimize this function by using lxml
-	html_page   = urlopen(url)
-	html_parse  = BeautifulSoup(html_page, 'html.parser') 
-	result      = html_parse.select_one(f"{beacon}[{attr}='{attr_value}']")
-	return result.get_text() 
+    try:
+        html_page   = urlopen(url)
+        html_parse  = BeautifulSoup(html_page, 'html.parser') 
+        result      = html_parse.select_one(f"{beacon}[{attr}='{attr_value}']")
+        return result.get_text() 
+    except: # FIXME - Add better error handling
+        print("An error occured while trying to retrieve information on the page")
+        return ""
 
 
 def get_cve_info(cve_number): # TODO - Add threads to retrieve informations
@@ -39,7 +43,7 @@ def convert_to_detailed_cvss(cvss):
     return detailed_cvss
 
 
-cve_info = get_cve_info("2016-5195")
+cve_info = get_cve_info("201-5195")
 
 for value in cve_info.values():
     if "CVSS" in value:
