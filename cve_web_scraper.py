@@ -65,9 +65,25 @@ def export_cve_info(cve):
 
 
 
-redhat_url = "https://access.redhat.com/hydra/rest/securitydata/cve?after=2022-01-01&before=2023-01-01&severity=important&per_page=2"
+redhat_url = "https://access.redhat.com/hydra/rest/securitydata/cve?after=2022-01-01&before=2023-01-01&cvss3_score=2&per_page=2"
 
 cves = get_cve_list_from_filter(redhat_url)
 
 for cve in cves:
+    print(cve)
     export_cve_info(cve)
+
+
+
+# def get_href(cve_number): 
+#     url = base_url + str(cve_number)
+#     links = retrieve_html_information(url, "a", find_all=True, href=True)
+#     # print(links)  
+#     for element in links : 
+#         # print(element.get_text())
+#         if "exploit-db.com" in element.get_text(): 
+#             print(element)
+
+# get_href("2016-5195")
+
+    
