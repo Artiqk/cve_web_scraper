@@ -23,6 +23,17 @@ def retrieve_html_information(url, beacon, attr='', attr_value='', find_all=Fals
         return ""
 
 
+def get_specific_links_in_page(cve_number, domain_to_retrieve): 
+    url = base_url + str(cve_number)
+    links = retrieve_html_information(url, "a", find_all=True, href=True)
+    links_retrieved = []
+    for element in links :
+        link = element.get_text()
+        if domain_to_retrieve in link: 
+            links_retrieved.append(link)
+    return links_retrieved
+
+
 def get_cve_info(cve_id): # TODO - Add threads to retrieve informations
     url = base_url + cve_id
     published_on = retrieve_html_information(url, "span", "data-testid", "vuln-published-on")
@@ -72,18 +83,5 @@ cves = get_cve_list_from_filter(redhat_url)
 for cve in cves:
     print(cve)
     export_cve_info(cve)
-
-
-
-# def get_href(cve_number): 
-#     url = base_url + str(cve_number)
-#     links = retrieve_html_information(url, "a", find_all=True, href=True)
-#     # print(links)  
-#     for element in links : 
-#         # print(element.get_text())
-#         if "exploit-db.com" in element.get_text(): 
-#             print(element)
-
-# get_href("2016-5195")
 
     
