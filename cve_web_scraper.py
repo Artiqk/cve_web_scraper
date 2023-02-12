@@ -122,12 +122,6 @@ for i in range(1, len(sys.argv)):
 if "per_page" not in redhat_url:
     redhat_url += "&per_page=50"
 
-print(redhat_url)
-
-# redhat_url = "https://access.redhat.com/hydra/rest/securitydata/cve?after=2022-01-01&before=2023-01-01&cvss3_score=2&per_page=10"
-
-
-
 cves = get_cve_list_from_filter(redhat_url)
 
 create_table_header(worksheet, titles)
@@ -147,4 +141,4 @@ for thread in cve_threads:
 for thread in cve_threads:
     thread.join()
 
-workbook.save("test.xlsx")    
+workbook.save("cve_result.xlsx")   
