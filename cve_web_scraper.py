@@ -1,8 +1,6 @@
 from urllib.request import urlopen
 from bs4 import BeautifulSoup
-import requests_cache
-import requests
-import threading
+import requests_cache, requests, threading, sys
 from cvss_trans import *
 from openpyxl import Workbook
 from openpyxl.styles import Border, Side, Alignment
@@ -40,21 +38,27 @@ def get_specific_links_in_page(cve_number, domain_to_retrieve):
 def get_cve_info(cve_id): # TODO - Add threads to retrieve informations
     url = base_url + cve_id
     cve_id = cve_id.split("cve-")[1]
-    published_on = retrieve_html_information(url, "span", "data-testid", "vuln-published-on")
-    # vector = retrieve_html_information(url, "span", "data-testid", "vuln-cvss3-nist-vector")
-    description = retrieve_html_information(url, "p", "data-testid", "vuln-description")
-    cvss_score, severity = retrieve_html_information(url, "a", "data-testid", "vuln-cvss3-panel-score").split(' ')
-    return {
+    try:
+        published_on = retrieve_html_information(url, "span", "data-testid", "vuln-published-on")
+        description = retrieve_html_information(url, "p", "data-testid", "vuln-description")
+        cvss_score, severity = retrieve_html_information(url, "a", "data-testid", "vuln-cvss3-panel-score").split(' ')
+        return {
         "cve": cve_id,
         "published_on": published_on, 
         "description": description, 
         "severity": severity,
         "cvss_score": cvss_score
     }
+    except:
+        print("Error while parsing HTML")
+        return {}
 
 
 def get_cve_list_from_filter(url):
     response = requests.get(redhat_url)
+    if response.status_code != 200:
+        print("Incorrect arguments.")
+        exit(0)
     html_parse = BeautifulSoup(response.content, 'lxml')
     return [cve.get_text().lower() for cve in html_parse.findAll('b')]
 
@@ -105,13 +109,24 @@ def create_table_header(worksheet, titles):
             worksheet.column_dimensions[cell[0]].width = 120
         x += 1
 
-
 workbook = Workbook()
 worksheet = workbook.active
 
 titles = ["CVE", "DATE", "DESCRIPTION", "SEVERITY", "CVSS SCORE"]
 
-redhat_url = "https://access.redhat.com/hydra/rest/securitydata/cve?after=2022-01-01&before=2023-01-01&cvss3_score=2&per_page=20"
+redhat_url = "https://access.redhat.com/hydra/rest/securitydata/cve?page=1"
+
+for i in range(1, len(sys.argv)):
+    redhat_url += f"&{sys.argv[i]}"
+
+if "per_page" not in redhat_url:
+    redhat_url += "&per_page=50"
+
+print(redhat_url)
+
+# redhat_url = "https://access.redhat.com/hydra/rest/securitydata/cve?after=2022-01-01&before=2023-01-01&cvss3_score=2&per_page=10"
+
+
 
 cves = get_cve_list_from_filter(redhat_url)
 
@@ -124,7 +139,6 @@ cve_threads = []
 for cve in cves:
     t = threading.Thread(target=export_cve_info, args=(cve, worksheet, row))
     cve_threads.append(t)
-    # export_cve_info(cve, worksheet, row)
     row += 1
 
 for thread in cve_threads:
