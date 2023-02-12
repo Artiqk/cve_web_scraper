@@ -2,7 +2,10 @@ from urllib.request import urlopen
 from bs4 import BeautifulSoup
 import requests_cache
 import requests
+import threading
 from cvss_trans import *
+from openpyxl import Workbook
+from openpyxl.styles import Border, Side, Alignment
 
 base_url = "https://nvd.nist.gov/vuln/detail/"
 
@@ -36,27 +39,18 @@ def get_specific_links_in_page(cve_number, domain_to_retrieve):
 
 def get_cve_info(cve_id): # TODO - Add threads to retrieve informations
     url = base_url + cve_id
+    cve_id = cve_id.split("cve-")[1]
     published_on = retrieve_html_information(url, "span", "data-testid", "vuln-published-on")
-    vector = retrieve_html_information(url, "span", "data-testid", "vuln-cvss3-nist-vector")
+    # vector = retrieve_html_information(url, "span", "data-testid", "vuln-cvss3-nist-vector")
     description = retrieve_html_information(url, "p", "data-testid", "vuln-description")
-    cve_score = retrieve_html_information(url, "a", "data-testid", "vuln-cvss3-panel-score")
+    cvss_score, severity = retrieve_html_information(url, "a", "data-testid", "vuln-cvss3-panel-score").split(' ')
     return {
+        "cve": cve_id,
         "published_on": published_on, 
-        "cvss": vector, 
         "description": description, 
-        "score": cve_score
+        "severity": severity,
+        "cvss_score": cvss_score
     }
-
-
-def convert_to_detailed_cvss(cvss):
-    cvss = cvss.split('/')[1:]
-    detailed_cvss = {}
-    for vector in cvss:
-        name, score = vector.split(':')
-        score = cvss_score[name][score]
-        name = cvss_titles[name]
-        detailed_cvss[name] = score
-    return detailed_cvss
 
 
 def get_cve_list_from_filter(url):
@@ -65,23 +59,78 @@ def get_cve_list_from_filter(url):
     return [cve.get_text().lower() for cve in html_parse.findAll('b')]
 
 
-def export_cve_info(cve):
+def export_cve_info(cve, worksheet, row):
+    x = 0
     cve_info = get_cve_info(cve)
     for value in cve_info.values():
-        if "CVSS" in value:
-            print(convert_to_detailed_cvss(value))
-        else:
-            print(value)
-    print("======================================================================================")
+        cell = coords_to_excel(x, row)
+        worksheet[cell] = value
+        worksheet[cell].border = Border(
+            top=Side(border_style='thin'),
+            bottom=Side(border_style='thin'),
+            right=Side(border_style='thin'),
+            left=Side(border_style='thin'),
+        )
+        worksheet[cell].alignment = Alignment(
+            horizontal='center',
+            vertical='center',
+            wrapText=True
+        )
+        x += 1
 
 
+def coords_to_excel(x, y):
+    excel_x = chr(x + 65)
+    excel_y = y + 1
+    return f"{excel_x}{excel_y}"
 
-redhat_url = "https://access.redhat.com/hydra/rest/securitydata/cve?after=2022-01-01&before=2023-01-01&cvss3_score=2&per_page=2"
+
+def create_table_header(worksheet, titles):
+    x = 0
+    for element in titles:
+        cell = coords_to_excel(x, 0)
+        worksheet[cell] = element
+        worksheet[cell].border = Border(
+            top=Side(border_style='thick'),
+            bottom=Side(border_style='thick'),
+            right=Side(border_style='thick'),
+            left=Side(border_style='thick'),
+        )
+        worksheet[cell].alignment = Alignment(
+            horizontal='center',
+            vertical='center',
+            wrapText=True
+        )
+        if element == "DESCRIPTION":
+            worksheet.column_dimensions[cell[0]].width = 120
+        x += 1
+
+
+workbook = Workbook()
+worksheet = workbook.active
+
+titles = ["CVE", "DATE", "DESCRIPTION", "SEVERITY", "CVSS SCORE"]
+
+redhat_url = "https://access.redhat.com/hydra/rest/securitydata/cve?after=2022-01-01&before=2023-01-01&cvss3_score=2&per_page=20"
 
 cves = get_cve_list_from_filter(redhat_url)
 
-for cve in cves:
-    print(cve)
-    export_cve_info(cve)
+create_table_header(worksheet, titles)
 
-    
+row = 1
+
+cve_threads = []
+
+for cve in cves:
+    t = threading.Thread(target=export_cve_info, args=(cve, worksheet, row))
+    cve_threads.append(t)
+    # export_cve_info(cve, worksheet, row)
+    row += 1
+
+for thread in cve_threads:
+    thread.start()
+
+for thread in cve_threads:
+    thread.join()
+
+workbook.save("test.xlsx")    
