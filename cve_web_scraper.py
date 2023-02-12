@@ -1,7 +1,6 @@
 from urllib.request import urlopen
 from bs4 import BeautifulSoup
 import requests_cache, requests, threading, sys
-from cvss_trans import *
 from openpyxl import Workbook
 from openpyxl.styles import Border, Side, Alignment
 
